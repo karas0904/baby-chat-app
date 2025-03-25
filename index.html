@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baby Chat App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="blur-shape red-shape"></div>
+    <div class="blur-shape blue-shape"></div>
+
+    <div class="container">
+      <!-- Left Sidebar -->
+      <div class="left-sidebar">
+        <div class="logo">Chat</div>
+        <div class="icons-container">
+          <button class="icon-btn"><i class="fas fa-heart"></i></button>
+          <div class="separator"></div>
+          <button class="icon-btn"><i class="fas fa-bookmark"></i></button>
+        </div>
+        <div class="profile-icon">
+          <img src="https://via.placeholder.com/30" alt="Profile" />
+        </div>
+      </div>
+
+      <!-- Messages List -->
+      <div class="messages-list">
+        <div class="custom-dropdown">
+          <div class="dropdown-header" id="dropdown-header">
+            <span id="dropdown-selected">Messages</span>
+            <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+          </div>
+          <div class="dropdown-menu" id="dropdown-menu">
+            <div class="dropdown-item" data-value="efforts">Efforts</div>
+          </div>
+        </div>
+        <input type="text" class="search-bar" placeholder="Search" />
+        <div id="message-list"></div>
+      </div>
+
+      <!-- Chat Section -->
+      <div class="chat-section">
+        <div class="chat-header">
+          <div class="user-info">
+            <div class="avatar"></div>
+            <div>
+              <div class="name">User 1</div>
+              <div class="status">Active</div>
+            </div>
+          </div>
+          <div class="actions">
+            <div class="icon" id="actions-icon">
+              <i class="fas fa-ellipsis-vertical"></i>
+            </div>
+          </div>
+        </div>
+        <div class="chat-body" id="messages">
+          <!-- Messages will be added dynamically -->
+          <div class="message received">
+            <p>Hey, how’s it going?</p>
+            <span class="timestamp">12:34 PM</span>
+          </div>
+          <div class="message sent">
+            <p>Pretty good, thanks!</p>
+            <span class="timestamp">12:35 PM</span>
+          </div>
+        </div>
+        <div class="chat-footer">
+          <input
+            type="text"
+            class="message-input"
+            id="message-input"
+            placeholder="Message"
+            autocomplete="off"
+          />
+          <button class="send-btn" id="send-btn">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load Socket.IO from CDN -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Load our client-side JavaScript -->
+    <script src="client.js"></script>
+  </body>
+</html>
