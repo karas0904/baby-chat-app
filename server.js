@@ -6,21 +6,21 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files
 app.use(express.static(__dirname));
 
-// Store connected users
 const users = {};
+const messages = {};
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  // Assign a random username
   const username = `User${Math.floor(Math.random() * 1000)}`;
   users[socket.id] = username;
-  io.emit("user list", Object.values(users)); // Send updated user list to all clients
 
-  // Notify others of new user
+  socket.emit("set username", username);
+  socket.emit("load messages", messages); // Initial load on connect
+  io.emit("user list", Object.values(users));
+
   socket.broadcast.emit("chat message", {
     content: `${username} has joined the chat`,
     sender: "system",
@@ -30,8 +30,8 @@ io.on("connection", (socket) => {
     }),
   });
 
-  // Handle chat messages
   socket.on("chat message", (msg) => {
+    const room = msg.room || "global";
     const message = {
       content: msg.content,
       sender: users[socket.id],
@@ -40,15 +40,21 @@ io.on("connection", (socket) => {
         minute: "2-digit",
       }),
     };
-    console.log("Message received:", message);
-    io.emit("chat message", message); // Broadcast to all
+    if (!messages[room]) messages[room] = [];
+    messages[room].push(message);
+    console.log(`Message in ${room}:`, message);
+    io.emit("chat message", { ...message, room });
   });
 
-  // Handle disconnection
+  // Handle room switch or refresh
+  socket.on("load messages", () => {
+    socket.emit("load messages", messages); // Send all messages to the requesting client
+  });
+
   socket.on("disconnect", () => {
     const username = users[socket.id];
     delete users[socket.id];
-    io.emit("user list", Object.values(users)); // Update user list
+    io.emit("user list", Object.values(users));
     socket.broadcast.emit("chat message", {
       content: `${username} has left the chat`,
       sender: "system",

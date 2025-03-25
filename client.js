@@ -3,7 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const messageInput = document.getElementById("message-input");
   const sendBtn = document.getElementById("send-btn");
   const messages = document.getElementById("messages");
+  const dropdownHeader = document.getElementById("dropdown-header");
+  const dropdownMenu = document.getElementById("dropdown-menu");
+  const dropdownSelected = document.getElementById("dropdown-selected");
+  const arrow = document.querySelector(".dropdown-header .arrow");
+
   let username = "";
+  let currentRoom = "global"; // Default room
 
   // Send message
   sendBtn.addEventListener("click", (e) => {
@@ -18,13 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function sendMessage() {
     const content = messageInput.value.trim();
     if (content) {
-      socket.emit("chat message", { content });
+      socket.emit("chat message", { content, room: currentRoom });
       messageInput.value = "";
     }
   }
 
-  // Receive messages
-  socket.on("chat message", (msg) => {
+  function appendMessage(msg) {
     const messageDiv = document.createElement("div");
     messageDiv.classList.add("message");
     if (msg.sender === "system") {
@@ -39,15 +44,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     messages.appendChild(messageDiv);
     messages.scrollTop = messages.scrollHeight;
+  }
+
+  // Load existing messages
+  socket.on("load messages", (messageData) => {
+    messages.innerHTML = "";
+    const roomMessages = messageData[currentRoom] || [];
+    roomMessages.forEach(appendMessage);
   });
 
-  // Update message list with connected users
+  // Receive new messages
+  socket.on("chat message", (msg) => {
+    if (msg.room === currentRoom) appendMessage(msg);
+  });
+
   function updateMessageList(userList) {
     const messageList = document.getElementById("message-list");
     messageList.innerHTML = "";
     userList.forEach((user) => {
       if (user !== username) {
-        // Exclude self
         const item = document.createElement("div");
         item.classList.add("message-item");
         item.dataset.user = user;
@@ -63,31 +78,51 @@ document.addEventListener("DOMContentLoaded", () => {
             })}</div>
           `;
         item.addEventListener("click", () => {
+          currentRoom = `${username}-${user}`;
           document.querySelector(".chat-header .name").textContent = user;
-          messages.innerHTML = ""; // Clear chat for new conversation
+          socket.emit("load messages"); // Request messages for the current room
         });
         messageList.appendChild(item);
       }
     });
   }
 
-  // Handle user list updates
+  // Set username and update user list
+  socket.on("set username", (assignedUsername) => {
+    username = assignedUsername;
+    console.log("Username set:", username);
+  });
+
   socket.on("user list", (userList) => {
-    if (!username) {
-      // Set username based on the first connection
-      username =
-        userList.find((name) => name === socket.id) ||
-        `User${socket.id.slice(0, 4)}`;
+    if (username) {
+      // Only update if username is set
+      updateMessageList(userList);
     }
-    updateMessageList(userList);
     console.log("Current users:", userList);
   });
 
   socket.on("connect", () => {
     console.log("Connected to server!");
+    socket.emit("load messages"); // Load messages on connect
+  });
+  socket.on("disconnect", () => console.log("Disconnected from server!"));
+
+  // Dropdown functionality
+  dropdownHeader.addEventListener("click", () => {
+    dropdownMenu.classList.toggle("active");
+    arrow.classList.toggle("active");
   });
 
-  socket.on("disconnect", () => {
-    console.log("Disconnected from server!");
+  dropdownMenu.addEventListener("click", (e) => {
+    if (e.target.classList.contains("dropdown-item")) {
+      dropdownSelected.textContent = e.target.textContent;
+      dropdownMenu.classList.remove("active");
+      arrow.classList.remove("active");
+      currentRoom =
+        e.target.textContent.toLowerCase() === "messages"
+          ? "global"
+          : "efforts";
+      socket.emit("load messages"); // Request messages for the new room
+    }
   });
 });
