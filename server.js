@@ -17,8 +17,7 @@ io.on("connection", (socket) => {
   const username = `User${Math.floor(Math.random() * 1000)}`;
   users[socket.id] = username;
 
-  socket.emit("set username", username);
-  socket.emit("load messages", messages); // Initial load on connect
+  socket.emit("load messages", messages);
   io.emit("user list", Object.values(users));
 
   socket.broadcast.emit("chat message", {
@@ -46,9 +45,19 @@ io.on("connection", (socket) => {
     io.emit("chat message", { ...message, room });
   });
 
-  // Handle room switch or refresh
-  socket.on("load messages", () => {
-    socket.emit("load messages", messages); // Send all messages to the requesting client
+  // Typing indicator
+  socket.on("typing", (data) => {
+    socket.broadcast.emit("typing", {
+      username: users[socket.id],
+      room: data.room,
+    });
+  });
+
+  socket.on("stop typing", (data) => {
+    socket.broadcast.emit("stop typing", {
+      username: users[socket.id],
+      room: data.room,
+    });
   });
 
   socket.on("disconnect", () => {
